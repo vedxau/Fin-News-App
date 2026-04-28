@@ -4,7 +4,11 @@ import PriorityColumn from './components/PriorityColumn';
 import { useNews } from './hooks/useNews';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from './lib/firebase';
-import { LayoutGrid, AlertCircle, BarChart3, Database, Shield, Terminal, Activity } from 'lucide-react';
+import {
+  LayoutGrid, AlertCircle, BarChart3, Database, Shield,
+  Terminal, Activity, Rss, Twitter, TrendingUp, TrendingDown,
+  Minus, Zap, Server, Clock, CheckCircle2, Lock
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 
@@ -22,6 +26,16 @@ export default function App() {
   const lowPriority = articles.filter(a => a.priority === "Low");
   const allSources = Array.from(new Set(articles.map(a => a.source))).sort();
 
+  const positiveCount = articles.filter(a => a.sentiment === 'positive').length;
+  const negativeCount = articles.filter(a => a.sentiment === 'negative').length;
+  const neutralCount = articles.filter(a => a.sentiment === 'neutral').length;
+  const avgImpact = articles.length > 0
+    ? (articles.reduce((s, a) => s + (a.impact_score || 0), 0) / articles.length * 100).toFixed(1)
+    : '0.0';
+
+  const xSources = allSources.filter(s => s.startsWith('x.com'));
+  const rssSources = allSources.filter(s => !s.startsWith('x.com'));
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0f0f11] flex flex-col items-center justify-center font-mono text-slate-500 gap-4">
@@ -36,82 +50,188 @@ export default function App() {
       <Navbar onIngest={triggerIngestion} ingesting={ingesting} />
       
       <main className="flex-1 flex overflow-hidden">
-        {/* Sidebar / Stats */}
+        {/* Left Icon Sidebar */}
         <div className="w-16 hidden lg:flex flex-col items-center py-6 gap-8 border-r border-[#262629] bg-[#1a1a1c]">
-          <LayoutGrid onClick={() => setActiveTab('dashboard')} className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'dashboard' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
-          <BarChart3 onClick={() => setActiveTab('stats')} className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'stats' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
-          <Shield onClick={() => setActiveTab('security')} className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'security' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          <button onClick={() => setActiveTab('dashboard')} title="Dashboard">
+            <LayoutGrid className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'dashboard' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          </button>
+          <button onClick={() => setActiveTab('stats')} title="Analytics">
+            <BarChart3 className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'stats' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          </button>
+          <button onClick={() => setActiveTab('security')} title="Security">
+            <Shield className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'security' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          </button>
           <div className="mt-auto">
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           </div>
         </div>
 
-        {activeTab === 'dashboard' ? (
+        {/* Main Content Area */}
+        {activeTab === 'dashboard' && (
           <div className="flex-1 flex overflow-hidden">
             <PriorityColumn title="High Impact" priority="High" articles={highPriority} allSources={allSources} />
             <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} allSources={allSources} />
             <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 font-mono tracking-widest bg-[#0f0f11]">
-            <Activity className="w-8 h-8 mb-4 opacity-50" />
-            <span className="text-xs uppercase opacity-50">MODULE '{activeTab}' PENDING ACTIVATION</span>
+        )}
+
+        {activeTab === 'stats' && (
+          <div className="flex-1 overflow-y-auto p-8 bg-[#0f0f11]">
+            <h2 className="text-xs uppercase font-mono tracking-[0.3em] text-amber-500 mb-8">Analytics & System Information</h2>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-10">
+              {[
+                { label: "Total Articles", value: articles.length, icon: <Rss className="w-4 h-4" />, color: "text-amber-400" },
+                { label: "High Impact", value: highPriority.length, icon: <TrendingUp className="w-4 h-4" />, color: "text-rose-400" },
+                { label: "Avg Impact Score", value: `${avgImpact}%`, icon: <Zap className="w-4 h-4" />, color: "text-purple-400" },
+                { label: "Sources Active", value: allSources.length, icon: <Server className="w-4 h-4" />, color: "text-emerald-400" },
+              ].map(card => (
+                <div key={card.label} className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-5">
+                  <div className={cn("mb-3", card.color)}>{card.icon}</div>
+                  <p className="text-2xl font-bold font-mono text-slate-100">{card.value}</p>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">{card.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Sentiment Breakdown */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
+              <div className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-6">
+                <h3 className="text-[9px] uppercase font-mono text-slate-500 mb-5 tracking-widest">Sentiment Breakdown</h3>
+                {[
+                  { label: "Positive", count: positiveCount, color: "bg-emerald-500", icon: <TrendingUp className="w-3 h-3 text-emerald-400" /> },
+                  { label: "Neutral", count: neutralCount, color: "bg-slate-500", icon: <Minus className="w-3 h-3 text-slate-400" /> },
+                  { label: "Negative", count: negativeCount, color: "bg-rose-500", icon: <TrendingDown className="w-3 h-3 text-rose-400" /> },
+                ].map(s => (
+                  <div key={s.label} className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">{s.icon}{s.label}</div>
+                      <span className="text-[11px] font-mono text-slate-300">{s.count}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#2c2c2e] rounded-full overflow-hidden">
+                      <div className={cn("h-full rounded-full transition-all", s.color)}
+                        style={{ width: articles.length > 0 ? `${(s.count / articles.length) * 100}%` : '0%' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* System Information */}
+              <div className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-6">
+                <h3 className="text-[9px] uppercase font-mono text-slate-500 mb-5 tracking-widest">System Information</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-slate-500">AI Engine</span>
+                    <span className="text-[11px] font-mono text-amber-400">Groq Llama 3.3 70B</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-slate-500">Pipeline Status</span>
+                    <span className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />HEALTHY</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-slate-500">Precision</span>
+                    <span className="text-[11px] font-mono text-slate-300">98.4%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-slate-500">Avg Latency</span>
+                    <span className="text-[11px] font-mono text-slate-300">1.2s</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-slate-500">Last Heartbeat</span>
+                    <span className="flex items-center gap-1 text-[11px] font-mono text-slate-400"><Clock className="w-3 h-3" />2s ago</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-slate-500">Nodes Active</span>
+                    <span className="text-[11px] font-mono text-slate-300">3</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Source Breakdown */}
+            <div className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-6">
+              <h3 className="text-[9px] uppercase font-mono text-slate-500 mb-5 tracking-widest">Active Sources</h3>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                {rssSources.map(src => (
+                  <div key={src} className="flex items-center justify-between px-4 py-2 bg-[#2c2c2e] rounded-lg">
+                    <div className="flex items-center gap-2"><Rss className="w-3 h-3 text-amber-500" /><span className="text-[11px] font-mono text-slate-300">{src}</span></div>
+                    <span className="text-[9px] font-mono text-emerald-400 tracking-widest">POLLING</span>
+                  </div>
+                ))}
+                {xSources.map(src => (
+                  <div key={src} className="flex items-center justify-between px-4 py-2 bg-[#2c2c2e] rounded-lg">
+                    <div className="flex items-center gap-2"><Twitter className="w-3 h-3 text-sky-400" /><span className="text-[11px] font-mono text-slate-300">{src}</span></div>
+                    <span className="text-[9px] font-mono text-sky-400 tracking-widest">STREAMING</span>
+                  </div>
+                ))}
+                {allSources.length === 0 && (
+                  <p className="text-[11px] font-mono text-slate-600 col-span-2">No sources loaded yet. Click GET NEWS.</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Right Sidebar - System Logs / Admin View Mock */}
-        <div className="w-64 hidden xl:flex flex-col bg-[#1a1a1c] border-l border-[#262629]">
-           <div className="p-4 border-b border-[#262629] bg-[#151517]">
-              <h3 className="text-[10px] uppercase font-mono tracking-widest text-slate-400">System Information</h3>
-           </div>
-           
-           <div className="flex-1 p-4 overflow-y-auto space-y-6">
-              <section>
-                <h4 className="text-[9px] uppercase font-mono text-slate-500 mb-3 tracking-widest">Active Sources</h4>
-                <ul className="space-y-2 text-[11px] font-mono">
-                  <li className="flex justify-between items-center text-slate-300">
-                    <span>X.com (5)</span>
-                    <span className="text-emerald-500 text-[9px]">STREAMING</span>
-                  </li>
-                  <li className="flex justify-between items-center text-slate-300">
-                    <span>BBC News</span>
-                    <span className="text-emerald-500 text-[9px]">POLLING</span>
-                  </li>
-                  <li className="flex justify-between items-center text-slate-300">
-                    <span>Bloomberg</span>
-                    <span className="text-amber-500 text-[9px]">CACHED</span>
-                  </li>
-                </ul>
-              </section>
+        {activeTab === 'security' && (
+          <div className="flex-1 overflow-y-auto p-8 bg-[#0f0f11]">
+            <h2 className="text-xs uppercase font-mono tracking-[0.3em] text-amber-500 mb-8">Security & Access Control</h2>
 
-              <section>
-                <h4 className="text-[9px] uppercase font-mono text-slate-500 mb-3 tracking-widest">Pipeline Health</h4>
-                <div className="space-y-2">
-                   <div className="flex justify-between text-[10px]">
-                     <span className="text-slate-500">Latency</span>
-                     <span className="text-slate-300">1.2s</span>
-                   </div>
-                   <div className="w-full h-1 bg-[#2c2c2e] rounded-full overflow-hidden">
-                     <div className="w-[85%] h-full bg-emerald-500" />
-                   </div>
-                   <div className="flex justify-between text-[10px]">
-                     <span className="text-slate-500">Precision</span>
-                     <span className="text-slate-300">98.4%</span>
-                   </div>
-                   <div className="w-full h-1 bg-[#2c2c2e] rounded-full overflow-hidden">
-                     <div className="w-[98%] h-full bg-emerald-500" />
-                   </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+              <div className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-6">
+                <h3 className="text-[9px] uppercase font-mono text-slate-500 mb-5 tracking-widest">Access Status</h3>
+                <div className="space-y-4">
+                  {[
+                    { label: "Public Read Access", status: "GRANTED", color: "text-emerald-400" },
+                    { label: "News Ingestion", status: "PUBLIC", color: "text-emerald-400" },
+                    { label: "Data Write (Anon)", status: "ENABLED", color: "text-amber-400" },
+                    { label: "Admin Controls", status: "RESTRICTED", color: "text-rose-400" },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
+                        <Lock className="w-3 h-3" />{item.label}
+                      </div>
+                      <span className={cn("text-[10px] font-mono tracking-widest", item.color)}>{item.status}</span>
+                    </div>
+                  ))}
                 </div>
-              </section>
-           </div>
-
-           <div className="p-4 bg-[#151517] border-t border-[#262629]">
-              <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono italic">
-                <AlertCircle className="w-3 h-3 text-amber-500" />
-                <span>Last heartbeat: 2s ago</span>
               </div>
-           </div>
-        </div>
+
+              <div className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-6">
+                <h3 className="text-[9px] uppercase font-mono text-slate-500 mb-5 tracking-widest">API Endpoints</h3>
+                <div className="space-y-3">
+                  {[
+                    { path: "/api/sources/rss", method: "GET", status: "LIVE" },
+                    { path: "/api/sources/x", method: "GET", status: "LIVE" },
+                  ].map(ep => (
+                    <div key={ep.path} className="flex items-center justify-between px-3 py-2 bg-[#2c2c2e] rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">{ep.method}</span>
+                        <span className="text-[11px] font-mono text-slate-300">{ep.path}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-emerald-400 text-[9px] font-mono">
+                        <CheckCircle2 className="w-3 h-3" />{ep.status}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#1a1a1c] border border-[#262629] rounded-xl p-6">
+              <h3 className="text-[9px] uppercase font-mono text-slate-500 mb-5 tracking-widest">Monitored X Accounts</h3>
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                {['BRICSinfo', 'WatcherGuru', 'remarks', 'firstpost', 'cryptorover', 'AJENews', 'NoLimitGains'].map(acc => (
+                  <div key={acc} className="flex items-center gap-2 px-3 py-2 bg-[#2c2c2e] rounded-lg">
+                    <Twitter className="w-3 h-3 text-sky-400 flex-shrink-0" />
+                    <span className="text-[11px] font-mono text-slate-300 truncate">@{acc}</span>
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Global Ingestion Notification */}
