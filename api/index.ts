@@ -50,7 +50,7 @@ app.get("/api/sources/x", async (req, res) => {
       isScraperLoggedIn = true;
     }
 
-    const accounts = ['BRICSinfo', 'WatcherGuru', 'remarks', 'firstpost', 'cryptorover', 'AJENews'];
+    const accounts = ['BRICSinfo', 'WatcherGuru', 'remarks', 'firstpost', 'cryptorover', 'AJENews', 'NoLimitGains'];
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const allTweets = [];
 
