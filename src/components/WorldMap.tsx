@@ -1,15 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
 
-// ── Equirectangular projection ───────────────────────────────────────────────
-// x% = (lng + 180) / 360 * 100
-// y% = (90 - lat) / 180 * 100
-const toXY = (lat: number, lng: number) => ({
-  x: ((lng + 180) / 360) * 100,
-  y: ((90 - lat) / 180) * 100,
+// ── Equirectangular projection ────────────────────────────────────────────
+const toXY = (lat: number, lng: number, w: number, h: number) => ({
+  x: ((lng + 180) / 360) * w,
+  y: ((90 - lat) / 180) * h,
 });
 
-// ── Keyword → [lat, lng] lookup ──────────────────────────────────────────────
+// ── Keyword → [lat, lng] ─────────────────────────────────────────────────
 const KEYWORD_COORDS: Record<string, [number, number]> = {
   'USD': [37.09, -95.71], 'Federal Reserve': [38.90, -77.03], 'Fed': [38.90, -77.03],
   'GBP': [51.51, -0.12], 'BOE': [51.51, -0.12], 'Bank of England': [51.51, -0.12],
@@ -17,7 +15,7 @@ const KEYWORD_COORDS: Record<string, [number, number]> = {
   'JPY': [35.68, 139.69], 'BOJ': [35.68, 139.69], 'Bank of Japan': [35.68, 139.69],
   'CAD': [56.13, -106.34], 'CNY': [39.90, 116.40], 'PBOC': [39.90, 116.40],
   'AUD': [-25.27, 133.77], 'RBA': [-25.27, 133.77], 'NZD': [-36.86, 174.76],
-  'CHF': [46.94, 7.44], 'SNB': [46.94, 7.44], 'INR': [28.61, 77.21],
+  'CHF': [46.94, 7.44], 'INR': [28.61, 77.21],
   'RUB': [55.75, 37.62], 'BRL': [-15.77, -47.92], 'ZAR': [-25.74, 28.18],
   'US': [37.09, -95.71], 'USA': [37.09, -95.71], 'United States': [37.09, -95.71], 'America': [37.09, -95.71],
   'UK': [51.51, -0.12], 'Britain': [51.51, -0.12], 'England': [51.51, -0.12],
@@ -41,9 +39,9 @@ const SOURCE_COORDS: Record<string, [number, number]> = {
 };
 
 const PRIORITY_COLORS = {
-  High:   { fill: '#ff4444', glow: 'rgba(255,68,68,0.8)',   ring: 'rgba(255,68,68,0.25)' },
-  Medium: { fill: '#ffc107', glow: 'rgba(255,193,7,0.8)',   ring: 'rgba(255,193,7,0.2)'  },
-  Low:    { fill: '#3b82f6', glow: 'rgba(59,130,246,0.8)',  ring: 'rgba(59,130,246,0.2)' },
+  High:   { fill: '#ff4444', glow: '#ff4444', ring: 'rgba(255,68,68,0.3)'   },
+  Medium: { fill: '#ffc107', glow: '#ffc107', ring: 'rgba(255,193,7,0.3)'   },
+  Low:    { fill: '#3b82f6', glow: '#3b82f6', ring: 'rgba(59,130,246,0.3)'  },
 };
 
 function getCoords(article: Article): [number, number] | null {
@@ -60,7 +58,20 @@ function getCoords(article: Article): [number, number] | null {
 interface Tooltip { title: string; source: string; count: number; x: number; y: number; }
 
 export default function WorldMap({ articles }: { articles: Article[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 800, h: 260 });
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      if (containerRef.current) {
+        setDims({ w: containerRef.current.clientWidth, h: containerRef.current.clientHeight });
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   const pins = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number; articles: Article[] }>();
@@ -74,140 +85,179 @@ export default function WorldMap({ articles }: { articles: Article[] }) {
     });
     return Array.from(map.values()).map(({ lat, lng, articles: arts }) => {
       const top = arts.sort((a, b) => {
-        const rank = { High: 0, Medium: 1, Low: 2 };
-        return (rank[a.priority] ?? 2) - (rank[b.priority] ?? 2);
+        const r: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+        return (r[a.priority] ?? 2) - (r[b.priority] ?? 2);
       })[0];
-      return { xy: toXY(lat, lng), top, count: arts.length };
+      return { pos: toXY(lat, lng, dims.w, dims.h), top, count: arts.length };
     });
-  }, [articles]);
+  }, [articles, dims]);
 
   return (
     <div
+      ref={containerRef}
       className="relative mx-4 mb-4 rounded-2xl overflow-hidden flex-shrink-0"
       style={{
         height: '260px',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(5, 15, 35, 0.85)',
+        border: '1px solid rgba(59,130,246,0.2)',
         backdropFilter: 'blur(12px)',
       }}
     >
-      {/* Header */}
-      <div className="absolute top-3 left-4 z-10 flex items-center gap-3">
-        <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-slate-400">Live News Map</span>
-        <span className="text-[9px] font-mono text-slate-600">
-          {pins.length} location{pins.length !== 1 ? 's' : ''}
-        </span>
+      {/* Header overlay */}
+      <div className="absolute top-3 left-4 z-20 flex items-center gap-3">
+        <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-blue-400/80">Live News Map</span>
+        <span className="text-[9px] font-mono text-slate-600">{pins.length} location{pins.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Legend */}
-      <div className="absolute top-3 right-4 z-10 flex items-center gap-4">
+      <div className="absolute top-3 right-4 z-20 flex items-center gap-4">
         {(['High', 'Medium', 'Low'] as const).map(p => (
           <div key={p} className="flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ background: PRIORITY_COLORS[p].fill, boxShadow: `0 0 6px ${PRIORITY_COLORS[p].glow}` }}
-            />
+            <span className="w-2 h-2 rounded-full" style={{ background: PRIORITY_COLORS[p].fill, boxShadow: `0 0 6px ${PRIORITY_COLORS[p].glow}` }} />
             <span className="text-[9px] font-mono text-slate-500">{p}</span>
           </div>
         ))}
       </div>
 
-      {/* World map background image — equirectangular, CSS-filtered to dark navy */}
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg"
-        alt="world map"
-        className="absolute inset-0 w-full h-full"
-        style={{
-          objectFit: 'fill',
-          filter: 'invert(1) sepia(1) saturate(0.4) hue-rotate(175deg) brightness(0.18) contrast(1.4)',
-          opacity: 0.9,
-          userSelect: 'none',
-          pointerEvents: 'none',
-        }}
-        draggable={false}
-      />
+      {/* SVG Canvas — world grid + pins */}
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${dims.w} ${dims.h}`}
+        className="absolute inset-0"
+        style={{ zIndex: 1 }}
+      >
+        <defs>
+          {/* Grid pattern for map feel */}
+          <pattern id="grid" width="40" height="20" patternUnits="userSpaceOnUse">
+            <path d={`M 40 0 L 0 0 0 20`} fill="none" stroke="rgba(59,130,246,0.06)" strokeWidth="0.5" />
+          </pattern>
+          {/* Glow filters */}
+          {(['High', 'Medium', 'Low'] as const).map(p => (
+            <filter key={p} id={`glow-${p}`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          ))}
+        </defs>
 
-      {/* Pins */}
-      {pins.map((pin, i) => {
-        const colors = PRIORITY_COLORS[pin.top.priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS.Low;
-        return (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              left: `${pin.xy.x}%`,
-              top: `${pin.xy.y}%`,
-              transform: 'translate(-50%, -50%)',
-              zIndex: 10,
-            }}
-            onMouseEnter={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              setTooltip({ title: pin.top.title, source: pin.top.source, count: pin.count, x: r.left, y: r.top });
-            }}
-            onMouseLeave={() => setTooltip(null)}
-          >
-            {/* Pulse ring */}
-            <div
-              className="absolute rounded-full animate-ping"
-              style={{
-                width: 16, height: 16,
-                top: '50%', left: '50%',
-                transform: 'translate(-50%,-50%)',
-                background: colors.ring,
-                animationDuration: '2s',
-              }}
-            />
-            {/* Dot */}
-            <div
-              className="relative cursor-pointer rounded-full"
-              style={{
-                width: 10, height: 10,
-                background: colors.fill,
-                boxShadow: `0 0 8px ${colors.glow}, 0 0 16px ${colors.ring}`,
-              }}
-            />
-            {/* Count badge */}
-            {pin.count > 1 && (
-              <div
-                className="absolute font-mono font-bold"
-                style={{
-                  top: -10, left: '50%', transform: 'translateX(-50%)',
-                  fontSize: 7, color: colors.fill,
-                  textShadow: `0 0 6px ${colors.glow}`,
-                }}
-              >
-                {pin.count}
-              </div>
-            )}
-          </div>
-        );
-      })}
+        {/* Background grid */}
+        <rect width="100%" height="100%" fill="url(#grid)" />
 
-      {/* No articles message */}
+        {/* Longitude lines */}
+        {[-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map(lng => {
+          const x = ((lng + 180) / 360) * dims.w;
+          return <line key={lng} x1={x} y1={0} x2={x} y2={dims.h} stroke="rgba(59,130,246,0.06)" strokeWidth="0.5" />;
+        })}
+
+        {/* Latitude lines */}
+        {[-60, -30, 0, 30, 60].map(lat => {
+          const y = ((90 - lat) / 180) * dims.h;
+          return <line key={lat} x1={0} y1={y} x2={dims.w} y2={y} stroke="rgba(59,130,246,0.06)" strokeWidth="0.5" />;
+        })}
+
+        {/* Equator highlight */}
+        <line
+          x1={0} y1={dims.h / 2} x2={dims.w} y2={dims.h / 2}
+          stroke="rgba(59,130,246,0.15)" strokeWidth="1" strokeDasharray="4,4"
+        />
+
+        {/* Simplified continent blobs — approximate rectangle regions */}
+        {[
+          // North America
+          { x: 50, y: 40, w: 180, h: 120, label: 'N.America' },
+          // South America  
+          { x: 120, y: 170, w: 100, h: 90, label: 'S.America' },
+          // Europe
+          { x: 370, y: 30, w: 90, h: 80, label: 'Europe' },
+          // Africa
+          { x: 370, y: 120, w: 100, h: 120, label: 'Africa' },
+          // Asia
+          { x: 460, y: 20, w: 200, h: 130, label: 'Asia' },
+          // Australia
+          { x: 580, y: 190, w: 90, h: 55, label: 'Australia' },
+        ].map(({ x, y, w, h, label }) => {
+          // Scale to container size
+          const sx = (x / 800) * dims.w;
+          const sy = (y / 260) * dims.h;
+          const sw = (w / 800) * dims.w;
+          const sh = (h / 260) * dims.h;
+          return (
+            <rect
+              key={label}
+              x={sx} y={sy} width={sw} height={sh}
+              rx={8} ry={8}
+              fill="rgba(99,130,180,0.08)"
+              stroke="rgba(99,130,180,0.18)"
+              strokeWidth="0.8"
+            />
+          );
+        })}
+
+        {/* Continent labels */}
+        {[
+          { lat: 50, lng: -100, label: 'N.AMERICA' },
+          { lat: -15, lng: -55,  label: 'S.AMERICA' },
+          { lat: 50, lng: 15,    label: 'EUROPE'    },
+          { lat: 5,  lng: 20,    label: 'AFRICA'    },
+          { lat: 40, lng: 90,    label: 'ASIA'      },
+          { lat: -25, lng: 135,  label: 'AUSTRALIA' },
+        ].map(({ lat, lng, label }) => {
+          const { x, y } = toXY(lat, lng, dims.w, dims.h);
+          return (
+            <text key={label} x={x} y={y} textAnchor="middle"
+              style={{ fontSize: 7, fill: 'rgba(148,163,184,0.3)', fontFamily: 'JetBrains Mono', letterSpacing: '0.15em', fontWeight: 600 }}>
+              {label}
+            </text>
+          );
+        })}
+
+        {/* News pins */}
+        {pins.map((pin, i) => {
+          const colors = PRIORITY_COLORS[pin.top.priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS.Low;
+          return (
+            <g key={i} style={{ cursor: 'pointer' }}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as SVGGElement).getBoundingClientRect();
+                setTooltip({ title: pin.top.title, source: pin.top.source, count: pin.count, x: r.left, y: r.top });
+              }}
+              onMouseLeave={() => setTooltip(null)}
+            >
+              {/* Outer glow ring */}
+              <circle cx={pin.pos.x} cy={pin.pos.y} r={10} fill={colors.ring} />
+              {/* Inner glow */}
+              <circle cx={pin.pos.x} cy={pin.pos.y} r={6} fill={colors.ring} />
+              {/* Main dot */}
+              <circle cx={pin.pos.x} cy={pin.pos.y} r={4} fill={colors.fill}
+                filter={`url(#glow-${pin.top.priority})`} />
+              {/* Count */}
+              {pin.count > 1 && (
+                <text x={pin.pos.x} y={pin.pos.y - 8} textAnchor="middle"
+                  style={{ fontSize: 7, fill: colors.fill, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
+                  {pin.count}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Empty state */}
       {articles.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-[11px] font-mono text-slate-600 uppercase tracking-widest">Click GET NEWS to populate the map</p>
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <p className="text-[11px] font-mono text-slate-600 uppercase tracking-widest">Click GET NEWS to populate map</p>
         </div>
       )}
 
       {/* Tooltip */}
       {tooltip && (
-        <div
-          className="fixed z-50 pointer-events-none rounded-xl p-3"
-          style={{
-            left: tooltip.x + 14,
-            top: tooltip.y - 60,
-            maxWidth: 260,
-            background: 'rgba(6,13,26,0.96)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
+        <div className="fixed z-50 pointer-events-none rounded-xl p-3"
+          style={{ left: tooltip.x + 14, top: tooltip.y - 70, maxWidth: 280,
+            background: 'rgba(5,13,30,0.97)', border: '1px solid rgba(59,130,246,0.3)',
+            backdropFilter: 'blur(16px)' }}>
           <p className="text-[12px] text-slate-200 font-medium leading-snug">{tooltip.title}</p>
           <p className="text-[10px] font-mono text-slate-500 mt-1">{tooltip.source}</p>
-          {tooltip.count > 1 && (
-            <p className="text-[9px] font-mono text-blue-400 mt-0.5">+{tooltip.count - 1} more articles here</p>
-          )}
+          {tooltip.count > 1 && <p className="text-[9px] font-mono text-blue-400 mt-0.5">+{tooltip.count - 1} more here</p>}
         </div>
       )}
     </div>
