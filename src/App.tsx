@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import PriorityColumn from './components/PriorityColumn';
 import ForexCalendar from './components/ForexCalendar';
+import WorldMap from './components/WorldMap';
 import { useNews } from './hooks/useNews';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from './lib/firebase';
@@ -122,12 +123,17 @@ export default function App() {
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
 
-          {/* Dashboard */}
+          {/* Dashboard: columns + world map below */}
           {activeTab === 'dashboard' && (
-            <div className="flex-1 flex overflow-hidden">
-              <PriorityColumn title="High Impact" priority="High" articles={highPriority} allSources={allSources} />
-              <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} allSources={allSources} />
-              <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Priority Columns */}
+              <div className="flex flex-1 overflow-hidden min-h-0" style={{ minHeight: '0' }}>
+                <PriorityColumn title="High Impact" priority="High" articles={highPriority} allSources={allSources} />
+                <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} allSources={allSources} />
+                <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
+              </div>
+              {/* World Map */}
+              <WorldMap articles={articles} />
             </div>
           )}
 

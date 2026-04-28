@@ -11,55 +11,62 @@ interface ForexEvent {
   previous: string;
 }
 
-// Much more visible, vibrant impact colors
 const impactConfig = {
   High: {
-    label: 'text-red-300 font-bold',
-    badgeBg: 'rgba(239,68,68,0.2)',
-    badgeBorder: 'rgba(239,68,68,0.6)',
-    badgeText: '#fca5a5',
-    rowBorder: 'rgba(239,68,68,0.25)',
-    rowBg: 'rgba(239,68,68,0.05)',
-    dot: '#ef4444',
-    dotShadow: '0 0 8px rgba(239,68,68,0.9)',
+    label: 'font-bold',
+    labelColor: '#ff6b6b',
+    badgeBg: 'rgba(239,68,68,0.25)',
+    badgeBorder: 'rgba(239,68,68,0.7)',
+    badgeText: '#ff9999',
+    rowBorder: 'rgba(239,68,68,0.3)',
+    rowBg: 'rgba(239,68,68,0.07)',
+    dot: '#ff4444',
+    dotShadow: '0 0 10px rgba(255,68,68,1)',
     icon: <Flame className="w-3 h-3" />,
-    stripColor: '#ef4444',
+    stripColor: '#ff4444',
+    timeColor: '#ff9999',
   },
   Medium: {
-    label: 'text-amber-300 font-semibold',
-    badgeBg: 'rgba(245,158,11,0.2)',
-    badgeBorder: 'rgba(245,158,11,0.6)',
-    badgeText: '#fcd34d',
-    rowBorder: 'rgba(245,158,11,0.2)',
-    rowBg: 'rgba(245,158,11,0.03)',
-    dot: '#f59e0b',
-    dotShadow: '0 0 8px rgba(245,158,11,0.9)',
+    label: 'font-semibold',
+    labelColor: '#ffd93d',
+    badgeBg: 'rgba(255,193,7,0.2)',
+    badgeBorder: 'rgba(255,193,7,0.7)',
+    badgeText: '#ffe66d',
+    rowBorder: 'rgba(255,193,7,0.25)',
+    rowBg: 'rgba(255,193,7,0.05)',
+    dot: '#ffc107',
+    dotShadow: '0 0 10px rgba(255,193,7,1)',
     icon: <Minus className="w-3 h-3" />,
-    stripColor: '#f59e0b',
+    stripColor: '#ffc107',
+    timeColor: '#ffe66d',
   },
   Low: {
-    label: 'text-slate-300',
-    badgeBg: 'rgba(100,116,139,0.2)',
-    badgeBorder: 'rgba(100,116,139,0.5)',
-    badgeText: '#94a3b8',
-    rowBorder: 'rgba(255,255,255,0.06)',
-    rowBg: 'rgba(255,255,255,0.01)',
-    dot: '#64748b',
-    dotShadow: '0 0 6px rgba(100,116,139,0.7)',
+    label: 'font-medium',
+    labelColor: '#a0b4c8',
+    badgeBg: 'rgba(148,163,184,0.15)',
+    badgeBorder: 'rgba(148,163,184,0.5)',
+    badgeText: '#cbd5e1',
+    rowBorder: 'rgba(148,163,184,0.15)',
+    rowBg: 'rgba(255,255,255,0.02)',
+    dot: '#94a3b8',
+    dotShadow: '0 0 8px rgba(148,163,184,0.8)',
     icon: <TrendingDown className="w-3 h-3" />,
-    stripColor: '#64748b',
+    stripColor: '#94a3b8',
+    timeColor: '#e2e8f0',
   },
   Holiday: {
-    label: 'text-purple-300',
-    badgeBg: 'rgba(139,92,246,0.2)',
-    badgeBorder: 'rgba(139,92,246,0.5)',
-    badgeText: '#c4b5fd',
-    rowBorder: 'rgba(139,92,246,0.2)',
-    rowBg: 'rgba(139,92,246,0.03)',
-    dot: '#8b5cf6',
-    dotShadow: '0 0 6px rgba(139,92,246,0.7)',
+    label: 'font-medium',
+    labelColor: '#c084fc',
+    badgeBg: 'rgba(192,132,252,0.15)',
+    badgeBorder: 'rgba(192,132,252,0.5)',
+    badgeText: '#d8b4fe',
+    rowBorder: 'rgba(192,132,252,0.2)',
+    rowBg: 'rgba(192,132,252,0.04)',
+    dot: '#a855f7',
+    dotShadow: '0 0 8px rgba(168,85,247,0.9)',
     icon: <Globe className="w-3 h-3" />,
-    stripColor: '#8b5cf6',
+    stripColor: '#a855f7',
+    timeColor: '#d8b4fe',
   },
 };
 
@@ -96,10 +103,13 @@ export default function ForexCalendar() {
 
   const filtered = events.filter(e => filter.includes(e.impact));
 
-  // Group by day
+  // Group by day — using IST (UTC+5:30)
   const grouped: Record<string, ForexEvent[]> = {};
   filtered.forEach(e => {
-    const day = new Date(e.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const day = new Date(e.date).toLocaleDateString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      weekday: 'long', month: 'short', day: 'numeric'
+    });
     if (!grouped[day]) grouped[day] = [];
     grouped[day].push(e);
   });
@@ -194,11 +204,18 @@ export default function ForexCalendar() {
                     {/* Left color strip */}
                     <div className="w-1 self-stretch flex-shrink-0 rounded-l-xl" style={{ background: cfg.stripColor, minHeight: '44px' }} />
 
-                    {/* Time */}
-                    <div className="w-16 flex-shrink-0 text-center py-3">
-                      <span className="text-[11px] font-mono" style={{ color: isPast ? '#475569' : '#94a3b8' }}>
-                        {eventTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    {/* Time — IST UTC+5:30, bright color */}
+                    <div className="w-20 flex-shrink-0 text-center py-3">
+                      <span
+                        className="text-[12px] font-mono font-bold"
+                        style={{ color: cfg.timeColor, textShadow: `0 0 10px ${cfg.dot}` }}
+                      >
+                        {eventTime.toLocaleTimeString('en-IN', {
+                          timeZone: 'Asia/Kolkata',
+                          hour: '2-digit', minute: '2-digit', hour12: true
+                        })}
                       </span>
+                      <p className="text-[8px] font-mono text-slate-600 mt-0.5">IST</p>
                     </div>
 
                     {/* Impact dot */}
@@ -217,7 +234,8 @@ export default function ForexCalendar() {
 
                     {/* Title */}
                     <div className="flex-1 min-w-0 py-3">
-                      <span className={cn("text-[12px] font-medium truncate block", cfg.label)}>
+                      <span className={cn("text-[12px] font-medium truncate block", cfg.label)}
+                        style={{ color: cfg.labelColor }}>
                         {event.title}
                       </span>
                     </div>
