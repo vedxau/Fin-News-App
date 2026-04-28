@@ -42,10 +42,10 @@ export function useNews() {
         }
       };
 
-      // Fetch both sources concurrently to speed up the pipeline (10s max for X scraper)
+      // Fetch both sources concurrently to speed up the pipeline (18s max for X scraper to allow login)
       const [rssResult, xResult] = await Promise.allSettled([
-        fetchWithTimeout('/api/sources/rss', 5000),
-        fetchWithTimeout('/api/sources/x', 10000)
+        fetchWithTimeout('/api/sources/rss', 6000),
+        fetchWithTimeout('/api/sources/x', 18000)
       ]);
 
       const rawArticles = rssResult.status === 'fulfilled' ? rssResult.value : [];

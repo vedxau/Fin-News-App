@@ -54,8 +54,8 @@ app.get("/api/sources/x", async (req, res) => {
 
     try {
       if (!isScraperLoggedIn) {
-        // Enforce a strict 4-second timeout on Twitter login
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Login Timeout')), 4000));
+        // Enforce a strict 15-second timeout on Twitter login
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Login Timeout')), 15000));
         await Promise.race([scraper.login('Vedxau', 'Vedika!1'), timeoutPromise]);
         isScraperLoggedIn = true;
       }
