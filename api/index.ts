@@ -38,25 +38,48 @@ app.get("/api/sources/rss", async (req, res) => {
   }
 });
 
+import { Scraper } from 'agent-twitter-client';
+
+const scraper = new Scraper();
+let isScraperLoggedIn = false;
+
 app.get("/api/sources/x", async (req, res) => {
-  res.json([
-    {
-      id: "x-1",
-      title: "Fed expected to hold rates according to latest Bloomberg report",
-      body: "Inside sources suggest the FOMC is leaning towards a pause.",
-      url: "https://x.com/BreakingNews/status/123",
-      published_at: new Date().toISOString(),
-      source: "x.com (@BreakingNews)",
-    },
-    {
-      id: "x-2",
-      title: "Apple reports record earnings for Q2, stock up 5% pre-market",
-      body: "$AAPL beats expectations on iPhone sales and services growth.",
-      url: "https://x.com/WallStreetMojo/status/456",
-      published_at: new Date().toISOString(),
-      source: "x.com (@WallStreetMojo)",
+  try {
+    if (!isScraperLoggedIn) {
+      await scraper.login('Vedxau', 'Vedika!1');
+      isScraperLoggedIn = true;
     }
-  ]);
+
+    const accounts = ['BRICSinfo', 'WatcherGuru', 'remarks', 'firstpost', 'cryptorover', 'AJENews'];
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const allTweets = [];
+
+    for (const account of accounts) {
+      try {
+        const tweetIterator = scraper.getTweets(account, 10);
+        for await (const tweet of tweetIterator) {
+          const tweetDate = tweet.timeParsed ? new Date(tweet.timeParsed) : new Date(tweet.timestamp ? tweet.timestamp * 1000 : Date.now());
+          if (tweetDate > twentyFourHoursAgo && tweet.text) {
+            allTweets.push({
+              id: tweet.id || Math.random().toString(),
+              title: `Update from @${account}`,
+              body: tweet.text,
+              url: `https://x.com/${account}/status/${tweet.id}`,
+              published_at: tweetDate.toISOString(),
+              source: `x.com (@${account})`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Error fetching tweets for ${account}:`, err);
+      }
+    }
+
+    res.json(allTweets);
+  } catch (error) {
+    console.error("Twitter Scraper Error:", error);
+    res.status(500).json({ error: "Failed to fetch X feeds" });
+  }
 });
 
 export default app;
