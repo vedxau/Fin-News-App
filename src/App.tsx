@@ -9,16 +9,17 @@ import {
   LayoutGrid, BarChart3, Database, Shield,
   Terminal, Rss, Twitter, TrendingUp, TrendingDown,
   Minus, Zap, Server, Clock, CheckCircle2, Lock,
-  CalendarDays, Activity
+  CalendarDays, Activity, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
-  { id: 'stats', label: 'Analytics', icon: BarChart3 },
-  { id: 'security', label: 'Security', icon: Shield },
+  { id: 'dashboard', label: 'Dashboard',  icon: LayoutGrid  },
+  { id: 'map',       label: 'Live Map',   icon: Globe       },
+  { id: 'calendar',  label: 'Calendar',   icon: CalendarDays },
+  { id: 'stats',     label: 'Analytics',  icon: BarChart3   },
+  { id: 'security',  label: 'Security',   icon: Shield      },
 ];
 
 // Glassmorphism card wrapper
@@ -118,17 +119,25 @@ export default function App() {
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
 
-          {/* Dashboard: columns + world map below */}
+          {/* Dashboard */}
           {activeTab === 'dashboard' && (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Priority Columns */}
-              <div className="flex flex-1 overflow-hidden min-h-0" style={{ minHeight: '0' }}>
-                <PriorityColumn title="High Impact" priority="High" articles={highPriority} allSources={allSources} />
-                <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} allSources={allSources} />
-                <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
+            <div className="flex-1 flex overflow-hidden">
+              <PriorityColumn title="High Impact" priority="High" articles={highPriority} allSources={allSources} />
+              <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} allSources={allSources} />
+              <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
+            </div>
+          )}
+
+          {/* Live Map tab */}
+          {activeTab === 'map' && (
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <h2 className="text-xs uppercase font-mono tracking-[0.3em] text-blue-400 mb-6">Live News Map</h2>
+              <div style={{ height: '520px' }}>
+                <WorldMap articles={articles} />
               </div>
-              {/* World Map */}
-              <WorldMap articles={articles} />
+              <p className="text-[10px] font-mono text-slate-600 mt-4 text-center">
+                Pins show geographic origin of news articles • Hover for details • Colors indicate priority
+              </p>
             </div>
           )}
 

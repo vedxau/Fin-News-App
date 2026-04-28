@@ -95,9 +95,8 @@ export default function WorldMap({ articles }: { articles: Article[] }) {
   return (
     <div
       ref={containerRef}
-      className="relative mx-4 mb-4 rounded-2xl overflow-hidden flex-shrink-0"
+      className="relative rounded-2xl overflow-hidden w-full h-full"
       style={{
-        height: '260px',
         background: 'rgba(5, 15, 35, 0.85)',
         border: '1px solid rgba(59,130,246,0.2)',
         backdropFilter: 'blur(12px)',
