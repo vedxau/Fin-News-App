@@ -77,7 +77,7 @@ export default function App() {
                 <h4 className="text-[9px] uppercase font-mono text-slate-500 mb-3 tracking-widest">AI Classification</h4>
                 <div className="bg-[#2c2c2e] rounded-lg p-3 border border-[#3a3a3c]">
                   <p className="text-[10px] leading-relaxed text-slate-400">
-                    System is using <span className="text-amber-500">Gemini 3 Flash</span> for real-time impact scoring based on FinBERT benchmarks.
+                    System is using <span className="text-amber-500">Groq Llama 3.3</span> for real-time impact scoring.
                   </p>
                 </div>
               </section>

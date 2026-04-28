@@ -37,7 +37,7 @@ export default function Navbar({ onIngest, ingesting }: { onIngest: () => void, 
           )}
         >
           <Terminal className={cn("w-3 h-3", ingesting && "animate-spin")} />
-          {ingesting ? "Ingesting..." : "Force Sync"}
+          {ingesting ? "Ingesting..." : "GET NEWS"}
         </button>
       </div>
     </nav>

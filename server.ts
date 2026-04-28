@@ -62,7 +62,7 @@ let isScraperLoggedIn = false;
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const allTweets = [];
 
-      for (const account of accounts) {
+      await Promise.all(accounts.map(async (account) => {
         try {
           const tweetIterator = scraper.getTweets(account, 10);
           for await (const tweet of tweetIterator) {
@@ -81,7 +81,7 @@ let isScraperLoggedIn = false;
         } catch (err) {
           console.error(`Error fetching tweets for ${account}:`, err);
         }
-      }
+      }));
 
       res.json(allTweets);
     } catch (error) {

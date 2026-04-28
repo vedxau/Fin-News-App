@@ -39,20 +39,20 @@ export function useNews() {
       const combined = [...rawArticles, ...xArticles];
 
       const existingIds = new Set(articles.map(a => a.id));
-      const newArticles: Article[] = [];
       
-      for (const raw of combined) {
-        if (existingIds.has(raw.id)) continue;
+      const rawToProcess = combined.filter(raw => !existingIds.has(raw.id));
 
+      const analysisPromises = rawToProcess.map(async (raw) => {
         const analysis = await analyzeNewsItem(raw.title, raw.body);
-
-        newArticles.push({
+        return {
           ...raw,
           ...analysis,
           ingested_at: new Date().toISOString(),
           published_at: raw.published_at ? new Date(raw.published_at).toISOString() : new Date().toISOString()
-        } as Article);
-      }
+        } as Article;
+      });
+
+      const newArticles = await Promise.all(analysisPromises);
 
       if (newArticles.length > 0) {
         setArticles(prev => {
