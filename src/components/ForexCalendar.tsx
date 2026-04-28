@@ -60,7 +60,7 @@ export default function ForexCalendar() {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#0f0f11] p-6">
+    <div className="flex-1 overflow-y-auto bg-transparent p-6 custom-scrollbar">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -71,7 +71,8 @@ export default function ForexCalendar() {
         </div>
         <button
           onClick={fetchCalendar}
-          className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-[#262629] text-slate-400 hover:text-amber-400 hover:border-amber-500/40 rounded-lg transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest rounded-lg transition-all text-slate-400 hover:text-blue-400"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}
         >
           <RefreshCw className={cn("w-3 h-3", loading && "animate-spin")} />
           Refresh
@@ -88,9 +89,12 @@ export default function ForexCalendar() {
               key={impact}
               onClick={() => toggleFilter(impact)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-widest border transition-all",
-                active ? cn(cfg.bg, cfg.color) : "border-[#262629] text-slate-600 hover:text-slate-400"
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-widest transition-all",
+                active
+                  ? cn("border", cfg.bg, cfg.color)
+                  : "text-slate-600 hover:text-slate-400"
               )}
+              style={!active ? { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' } : {}}
             >
               <span className={cn("w-1.5 h-1.5 rounded-full", active ? cfg.dot : "bg-slate-600")} />
               {impact}
@@ -126,10 +130,14 @@ export default function ForexCalendar() {
                   <div
                     key={`${event.country}-${event.title}-${idx}`}
                     className={cn(
-                      "flex items-center gap-4 px-4 py-3 rounded-xl border transition-all",
-                      "bg-[#1a1a1c] border-[#262629] hover:border-[#3a3a3c]",
-                      isPast && "opacity-50"
+                      "flex items-center gap-4 px-4 py-3 rounded-xl transition-all",
+                      isPast && "opacity-40"
                     )}
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                    }}
                   >
                     {/* Time */}
                     <div className="w-16 flex-shrink-0 text-center">
