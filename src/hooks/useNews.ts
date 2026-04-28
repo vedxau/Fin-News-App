@@ -30,11 +30,26 @@ export function useNews() {
   const triggerIngestion = async () => {
     setIngesting(true);
     try {
-      const rssResponse = await fetch('/api/sources/rss');
-      const rawArticles = await rssResponse.json();
+      // Add a timeout function to prevent UI hangs if the scraper gets blocked
+      const fetchWithTimeout = async (url: string, ms: number) => {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), ms);
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          return await res.json();
+        } finally {
+          clearTimeout(id);
+        }
+      };
 
-      const xResponse = await fetch('/api/sources/x');
-      const xArticles = await xResponse.json();
+      // Fetch both sources concurrently to speed up the pipeline (10s max for X scraper)
+      const [rssResult, xResult] = await Promise.allSettled([
+        fetchWithTimeout('/api/sources/rss', 5000),
+        fetchWithTimeout('/api/sources/x', 10000)
+      ]);
+
+      const rawArticles = rssResult.status === 'fulfilled' ? rssResult.value : [];
+      const xArticles = xResult.status === 'fulfilled' ? xResult.value : [];
 
       const combined = [...rawArticles, ...xArticles];
 

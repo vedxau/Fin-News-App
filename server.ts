@@ -24,9 +24,11 @@ async function startServer() {
       ];
 
       const allItems = [];
-      for (const source of sources) {
+      await Promise.all(sources.map(async (source) => {
         try {
-          const feed = await parser.parseURL(source.url);
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+          const feed = await Promise.race([parser.parseURL(source.url), timeoutPromise]) as any;
+          
           const items = feed.items.map(item => ({
             id: item.guid || item.link,
             title: item.title,
@@ -37,9 +39,9 @@ async function startServer() {
           }));
           allItems.push(...items);
         } catch (err) {
-          console.error(`Error fetching ${source.name}:`, err);
+          console.error(`Error fetching ${source.name}:`, err.message);
         }
-      }
+      }));
 
       res.json(allItems);
     } catch (error) {
