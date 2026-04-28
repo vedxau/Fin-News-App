@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, limit, addDoc, serverTimestamp, getDocs, where } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { Article, Priority } from '../types';
+import { Article } from '../types';
 import { analyzeNewsItem } from '../services/geminiService';
 
 export function useNews() {
@@ -10,31 +8,28 @@ export function useNews() {
   const [ingesting, setIngesting] = useState(false);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'articles'),
-      orderBy('published_at', 'desc'),
-      limit(100)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Article[];
-      setArticles(docs);
-      setLoading(false);
-    }, (error) => {
-      console.error("Firestore snapshot error:", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    // Load from local storage
+    const stored = localStorage.getItem('finpulse_articles');
+    if (stored) {
+      try {
+        setArticles(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse stored articles");
+      }
+    }
+    setLoading(false);
   }, []);
+
+  // Save to local storage whenever articles change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('finpulse_articles', JSON.stringify(articles));
+    }
+  }, [articles, loading]);
 
   const triggerIngestion = async () => {
     setIngesting(true);
     try {
-      // 1. Fetch raw news from our Express server
       const rssResponse = await fetch('/api/sources/rss');
       const rawArticles = await rssResponse.json();
 
@@ -43,25 +38,29 @@ export function useNews() {
 
       const combined = [...rawArticles, ...xArticles];
 
-      // 2. Process each new article (deduplication check simplified here)
-      // For demo, we'll just check if the ID already exists in our current state
       const existingIds = new Set(articles.map(a => a.id));
+      const newArticles: Article[] = [];
       
       for (const raw of combined) {
         if (existingIds.has(raw.id)) continue;
 
-        // 3. Analyze with Gemini
         const analysis = await analyzeNewsItem(raw.title, raw.body);
 
-        // 4. Save to Firestore
-        await addDoc(collection(db, 'articles'), {
+        newArticles.push({
           ...raw,
           ...analysis,
           ingested_at: new Date().toISOString(),
-          // Use original pub date if possible
           published_at: raw.published_at ? new Date(raw.published_at).toISOString() : new Date().toISOString()
+        } as Article);
+      }
+
+      if (newArticles.length > 0) {
+        setArticles(prev => {
+          const updated = [...newArticles, ...prev];
+          return updated.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
         });
       }
+
     } catch (error) {
       console.error("Ingestion failed:", error);
     } finally {

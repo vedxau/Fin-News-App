@@ -18,7 +18,7 @@ export default function PriorityColumn({ title, priority, articles }: PriorityCo
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#151517] border-r border-[#262629] last:border-r-0 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-[#151517] border-r border-[#262629] last:border-r-0 overflow-hidden">
       <div className="p-4 border-b border-[#262629] bg-[#1a1a1c] sticky top-0 z-10 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className={cn("w-2 h-2 rounded-full", dotColor[priority])} />
