@@ -20,6 +20,7 @@ export default function App() {
   const highPriority = articles.filter(a => a.priority === "High");
   const mediumPriority = articles.filter(a => a.priority === "Medium");
   const lowPriority = articles.filter(a => a.priority === "Low");
+  const allSources = Array.from(new Set(articles.map(a => a.source))).sort();
 
   if (loading) {
     return (
@@ -47,9 +48,9 @@ export default function App() {
 
         {activeTab === 'dashboard' ? (
           <div className="flex-1 flex overflow-hidden">
-            <PriorityColumn title="High Impact" priority="High" articles={highPriority} />
-            <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} />
-            <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} />
+            <PriorityColumn title="High Impact" priority="High" articles={highPriority} allSources={allSources} />
+            <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} allSources={allSources} />
+            <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-500 font-mono tracking-widest bg-[#0f0f11]">
