@@ -42,11 +42,11 @@ export function useNews() {
         }
       };
 
-      // Fetch all 3 sources concurrently (18s max for X, 8s for ForexFactory)
+      // Fetch all 3 sources concurrently
       const [rssResult, xResult, forexResult] = await Promise.allSettled([
         fetchWithTimeout('/api/sources/rss', 6000),
         fetchWithTimeout('/api/sources/x', 18000),
-        fetchWithTimeout('/api/sources/forex', 10000),
+        fetchWithTimeout('/api/sources/forex-news', 10000),
       ]);
 
       const rawArticles = rssResult.status === 'fulfilled' ? rssResult.value : [];

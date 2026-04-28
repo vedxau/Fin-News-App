@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import PriorityColumn from './components/PriorityColumn';
+import ForexCalendar from './components/ForexCalendar';
 import { useNews } from './hooks/useNews';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import {
   LayoutGrid, AlertCircle, BarChart3, Database, Shield,
   Terminal, Activity, Rss, Twitter, TrendingUp, TrendingDown,
-  Minus, Zap, Server, Clock, CheckCircle2, Lock
+  Minus, Zap, Server, Clock, CheckCircle2, Lock, CalendarDays
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -55,6 +56,9 @@ export default function App() {
           <button onClick={() => setActiveTab('dashboard')} title="Dashboard">
             <LayoutGrid className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'dashboard' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
           </button>
+          <button onClick={() => setActiveTab('calendar')} title="Economic Calendar">
+            <CalendarDays className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'calendar' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          </button>
           <button onClick={() => setActiveTab('stats')} title="Analytics">
             <BarChart3 className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'stats' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
           </button>
@@ -74,6 +78,8 @@ export default function App() {
             <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} allSources={allSources} />
           </div>
         )}
+
+        {activeTab === 'calendar' && <ForexCalendar />}
 
         {activeTab === 'stats' && (
           <div className="flex-1 overflow-y-auto p-8 bg-[#0f0f11]">

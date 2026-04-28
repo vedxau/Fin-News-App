@@ -67,52 +67,68 @@ app.get("/api/sources/x", async (req, res) => {
   }
 });
 
-// ForexFactory Economic Calendar (via faireconomy.media mirror — High & Medium only)
-app.get("/api/sources/forex", async (req, res) => {
+// ForexFactory Economic Calendar — full calendar for Calendar tab
+app.get("/api/sources/forex-calendar", async (req, res) => {
   try {
     const url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
-
     const data: any = await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Timeout')), 8000);
       https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } }, (response) => {
         let body = '';
         response.on('data', chunk => body += chunk);
-        response.on('end', () => {
-          clearTimeout(timeout);
-          try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
-        });
+        response.on('end', () => { clearTimeout(timeout); try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+        response.on('error', reject);
+      }).on('error', reject);
+    });
+    // Return all events (calendar tab handles filtering by impact level)
+    res.json(data);
+  } catch (err: any) {
+    console.error('ForexFactory calendar error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch ForexFactory calendar' });
+  }
+});
+
+// ForexFactory Breaking News — only High and Low impact events for the NEWS section
+app.get("/api/sources/forex-news", async (req, res) => {
+  try {
+    const url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
+    const data: any = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Timeout')), 8000);
+      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } }, (response) => {
+        let body = '';
+        response.on('data', chunk => body += chunk);
+        response.on('end', () => { clearTimeout(timeout); try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
         response.on('error', reject);
       }).on('error', reject);
     });
 
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const fortyEightHoursAhead = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
+    // Only High and Low impact events within the past 24 hours (Breaking news window)
     const filtered = (data as any[]).filter(event => {
-      const impact = event.impact;
-      if (impact !== 'High' && impact !== 'Medium') return false;
+      if (event.impact !== 'High' && event.impact !== 'Low') return false;
       const eventDate = new Date(event.date);
-      return eventDate >= twentyFourHoursAgo && eventDate <= fortyEightHoursAhead;
+      return eventDate >= twentyFourHoursAgo && eventDate <= now;
     });
 
     const articles = filtered.map(event => ({
-      id: `forex-${event.country}-${event.title}-${event.date}`.replace(/\s+/g, '-'),
-      title: `[${event.country}] ${event.title}`,
+      id: `ffnews-${event.country}-${event.title}-${event.date}`.replace(/\s+/g, '-'),
+      title: `🔴 BREAKING [${event.country}]: ${event.title}`,
       body: [
         event.forecast ? `Forecast: ${event.forecast}` : '',
         event.previous ? `Previous: ${event.previous}` : '',
-        `Impact: ${event.impact}`,
+        `Impact: ${event.impact} | Source: ForexFactory`,
       ].filter(Boolean).join(' | '),
       url: `https://www.forexfactory.com/news`,
       published_at: new Date(event.date).toISOString(),
-      source: `ForexFactory (${event.impact} Impact)`,
+      source: `ForexFactory Breaking`,
     }));
 
     res.json(articles);
   } catch (err: any) {
-    console.error('ForexFactory fetch error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch ForexFactory calendar' });
+    console.error('ForexFactory news error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch ForexFactory news' });
   }
 });
 
