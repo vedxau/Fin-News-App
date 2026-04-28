@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import PriorityColumn from './components/PriorityColumn';
 import { useNews } from './hooks/useNews';
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { signInAnonymously } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import { LayoutGrid, AlertCircle, BarChart3, Database, Shield, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [user] = useAuthState(auth);
+  useEffect(() => {
+    signInAnonymously(auth).catch(console.error);
+  }, []);
+
   const { articles, loading, ingesting, triggerIngestion } = useNews();
 
   const highPriority = articles.filter(a => a.priority === "High");
