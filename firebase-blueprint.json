@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "Represents a market-moving financial news item.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier (UUID or hash)." },
+        "source": { "type": "string", "description": "Source name (e.g., x.com, cnn.com)." },
+        "url": { "type": "string", "description": "Original article URL." },
+        "title": { "type": "string", "description": "News headline." },
+        "body": { "type": "string", "description": "Summary or full text content." },
+        "published_at": { "type": "string", "format": "date-time", "description": "When the news was published." },
+        "ingested_at": { "type": "string", "format": "date-time", "description": "When the news was pulled by the system." },
+        "priority": { "type": "string", "enum": ["High", "Medium", "Low"], "description": "Impact importance tier." },
+        "categories": { "type": "array", "items": { "type": "string" }, "description": "Finance categories (e.g., Central Bank, M&A)." },
+        "entities": { "type": "array", "items": { "type": "string" }, "description": "Key entities mentioned (e.g., Apple, Fed)." },
+        "sentiment": { "type": "string", "enum": ["positive", "neutral", "negative"] },
+        "impact_score": { "type": "number", "description": "Numerical impact score [0,1]." }
+      },
+      "required": ["id", "source", "title", "priority"]
+    },
+    "MonitoredAccount": {
+      "title": "Monitored Account",
+      "description": "Information about social media accounts being tracked for news.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "platform": { "type": "string" },
+        "added_at": { "type": "string", "format": "date-time" },
+        "precision": { "type": "number", "description": "Finance content precision score." },
+        "avg_latency": { "type": "number", "description": "Average lead time in seconds." },
+        "status": { "type": "string", "enum": ["active", "candidate", "watchlisted"] }
+      },
+      "required": ["username", "platform", "status"]
+    },
+    "Settings": {
+      "title": "System Settings",
+      "description": "Global configuration for the ingestion pipeline.",
+      "type": "object",
+      "properties": {
+        "high_priority_threshold": { "type": "number" },
+        "medium_priority_threshold": { "type": "number" },
+        "keywords": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Collection of processed financial news articles."
+    },
+    "/monitored_accounts/{accountId}": {
+      "schema": "MonitoredAccount",
+      "description": "Accounts being monitored on platforms like X.com."
+    },
+    "/settings/config": {
+      "schema": "Settings",
+      "description": "Global system settings."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "FinPulse AI",
+  "description": "Real-time financial news ingestion and analysis platform with AI-powered impact scoring and sentiment analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI-powered classification", "Real-time news processing"]
+}

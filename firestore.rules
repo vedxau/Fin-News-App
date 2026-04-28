@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidArticle(data) {
+      return data.keys().hasAll(['id', 'source', 'title', 'priority', 'body', 'url', 'published_at', 'ingested_at', 'categories', 'entities', 'sentiment', 'impact_score']) &&
+             data.id is string && data.id.size() <= 256 &&
+             data.source is string && data.source.size() <= 100 &&
+             data.title is string && data.title.size() <= 512 &&
+             data.priority in ['High', 'Medium', 'Low'] &&
+             data.body is string && data.body.size() <= 5000 &&
+             data.url is string && data.url.size() <= 1000 &&
+             data.impact_score is number && data.impact_score >= 0 && data.impact_score <= 1 &&
+             data.categories is list && data.entities is list;
+    }
+
+    // Articles collection
+    match /articles/{articleId} {
+      allow read: if true; // Publicly readable for this dashboard
+      
+      allow create: if isSignedIn() && isValidArticle(request.resource.data);
+      
+      allow update: if (
+        isSignedIn() && (
+          // Admin can reassign priority or categories
+          (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['priority', 'categories'])) ||
+          // Automated ingestion (for this demo, we allow users to trigger it)
+          isValidArticle(request.resource.data)
+        )
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // Monitored Accounts
+    match /monitored_accounts/{accountId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Settings
+    match /settings/config {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Admin list - bootstrapping the current user as an admin
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Managed via console
+    }
+  }
+}
