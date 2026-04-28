@@ -8,8 +8,8 @@ export function useNews() {
   const [ingesting, setIngesting] = useState(false);
 
   useEffect(() => {
-    // Load from local storage
-    const stored = localStorage.getItem('finpulse_articles');
+    // v2 key: clears old cache that contained ForexFactory calendar articles
+    const stored = localStorage.getItem('finpulse_articles_v2');
     if (stored) {
       try {
         setArticles(JSON.parse(stored));
@@ -17,13 +17,15 @@ export function useNews() {
         console.error("Failed to parse stored articles");
       }
     }
+    // Also remove old key if present
+    localStorage.removeItem('finpulse_articles');
     setLoading(false);
   }, []);
 
   // Save to local storage whenever articles change
   useEffect(() => {
     if (!loading) {
-      localStorage.setItem('finpulse_articles', JSON.stringify(articles));
+      localStorage.setItem('finpulse_articles_v2', JSON.stringify(articles));
     }
   }, [articles, loading]);
 
