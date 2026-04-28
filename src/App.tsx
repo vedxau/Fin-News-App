@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import PriorityColumn from './components/PriorityColumn';
 import { useNews } from './hooks/useNews';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from './lib/firebase';
-import { LayoutGrid, AlertCircle, BarChart3, Database, Shield, Terminal } from 'lucide-react';
+import { LayoutGrid, AlertCircle, BarChart3, Database, Shield, Terminal, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from './lib/utils';
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
   useEffect(() => {
     signInAnonymously(auth).catch(console.error);
   }, []);
@@ -34,19 +37,26 @@ export default function App() {
       <main className="flex-1 flex overflow-hidden">
         {/* Sidebar / Stats */}
         <div className="w-16 hidden lg:flex flex-col items-center py-6 gap-8 border-r border-[#262629] bg-[#1a1a1c]">
-          <LayoutGrid className="w-5 h-5 text-amber-500 cursor-pointer" />
-          <BarChart3 className="w-5 h-5 text-slate-600 hover:text-slate-300 cursor-pointer" />
-          <Shield className="w-5 h-5 text-slate-600 hover:text-slate-300 cursor-pointer" />
+          <LayoutGrid onClick={() => setActiveTab('dashboard')} className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'dashboard' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          <BarChart3 onClick={() => setActiveTab('stats')} className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'stats' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
+          <Shield onClick={() => setActiveTab('security')} className={cn("w-5 h-5 cursor-pointer transition-colors", activeTab === 'security' ? "text-amber-500" : "text-slate-600 hover:text-slate-300")} />
           <div className="mt-auto">
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <PriorityColumn title="High Impact" priority="High" articles={highPriority} />
-          <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} />
-          <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} />
-        </div>
+        {activeTab === 'dashboard' ? (
+          <div className="flex-1 flex overflow-hidden">
+            <PriorityColumn title="High Impact" priority="High" articles={highPriority} />
+            <PriorityColumn title="Medium Impact" priority="Medium" articles={mediumPriority} />
+            <PriorityColumn title="Low Impact" priority="Low" articles={lowPriority} />
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 font-mono tracking-widest bg-[#0f0f11]">
+            <Activity className="w-8 h-8 mb-4 opacity-50" />
+            <span className="text-xs uppercase opacity-50">MODULE '{activeTab}' PENDING ACTIVATION</span>
+          </div>
+        )}
 
         {/* Right Sidebar - System Logs / Admin View Mock */}
         <div className="w-64 hidden xl:flex flex-col bg-[#1a1a1c] border-l border-[#262629]">
@@ -71,15 +81,6 @@ export default function App() {
                     <span className="text-amber-500 text-[9px]">CACHED</span>
                   </li>
                 </ul>
-              </section>
-
-              <section>
-                <h4 className="text-[9px] uppercase font-mono text-slate-500 mb-3 tracking-widest">AI Classification</h4>
-                <div className="bg-[#2c2c2e] rounded-lg p-3 border border-[#3a3a3c]">
-                  <p className="text-[10px] leading-relaxed text-slate-400">
-                    System is using <span className="text-amber-500">Groq Llama 3.3</span> for real-time impact scoring.
-                  </p>
-                </div>
               </section>
 
               <section>
