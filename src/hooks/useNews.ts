@@ -42,16 +42,18 @@ export function useNews() {
         }
       };
 
-      // Fetch both sources concurrently to speed up the pipeline (18s max for X scraper to allow login)
-      const [rssResult, xResult] = await Promise.allSettled([
+      // Fetch all 3 sources concurrently (18s max for X, 8s for ForexFactory)
+      const [rssResult, xResult, forexResult] = await Promise.allSettled([
         fetchWithTimeout('/api/sources/rss', 6000),
-        fetchWithTimeout('/api/sources/x', 18000)
+        fetchWithTimeout('/api/sources/x', 18000),
+        fetchWithTimeout('/api/sources/forex', 10000),
       ]);
 
       const rawArticles = rssResult.status === 'fulfilled' ? rssResult.value : [];
       const xArticles = xResult.status === 'fulfilled' ? xResult.value : [];
+      const forexArticles = forexResult.status === 'fulfilled' ? forexResult.value : [];
 
-      const combined = [...rawArticles, ...xArticles];
+      const combined = [...rawArticles, ...xArticles, ...forexArticles];
 
       const existingIds = new Set(articles.map(a => a.id));
       

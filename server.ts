@@ -3,7 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import RSSParser from "rss-parser";
-import { Scraper } from 'agent-twitter-client';
+import https from "https";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -71,6 +71,54 @@ async function startServer() {
     } catch (error) {
       console.error("Twitter Scraper Error:", error);
       res.status(500).json({ error: "Failed to fetch X feeds" });
+    }
+  });
+
+  // ForexFactory Economic Calendar (High & Medium only)
+  app.get("/api/sources/forex", async (req, res) => {
+    try {
+      const url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
+
+      const data: any = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Timeout')), 8000);
+        https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } }, (response) => {
+          let body = '';
+          response.on('data', chunk => body += chunk);
+          response.on('end', () => {
+            clearTimeout(timeout);
+            try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+          });
+          response.on('error', reject);
+        }).on('error', reject);
+      });
+
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const fortyEightHoursAhead = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+      const filtered = (data as any[]).filter(event => {
+        if (event.impact !== 'High' && event.impact !== 'Medium') return false;
+        const eventDate = new Date(event.date);
+        return eventDate >= twentyFourHoursAgo && eventDate <= fortyEightHoursAhead;
+      });
+
+      const articles = filtered.map(event => ({
+        id: `forex-${event.country}-${event.title}-${event.date}`.replace(/\s+/g, '-'),
+        title: `[${event.country}] ${event.title}`,
+        body: [
+          event.forecast ? `Forecast: ${event.forecast}` : '',
+          event.previous ? `Previous: ${event.previous}` : '',
+          `Impact: ${event.impact}`,
+        ].filter(Boolean).join(' | '),
+        url: `https://www.forexfactory.com/news`,
+        published_at: new Date(event.date).toISOString(),
+        source: `ForexFactory (${event.impact} Impact)`,
+      }));
+
+      res.json(articles);
+    } catch (err: any) {
+      console.error('ForexFactory fetch error:', err.message);
+      res.status(500).json({ error: 'Failed to fetch ForexFactory calendar' });
     }
   });
 
