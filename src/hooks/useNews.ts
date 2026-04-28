@@ -42,18 +42,16 @@ export function useNews() {
         }
       };
 
-      // Fetch all 3 sources concurrently
-      const [rssResult, xResult, forexResult] = await Promise.allSettled([
+      // Fetch RSS and X concurrently — ForexFactory calendar is ONLY for the Calendar tab
+      const [rssResult, xResult] = await Promise.allSettled([
         fetchWithTimeout('/api/sources/rss', 6000),
         fetchWithTimeout('/api/sources/x', 18000),
-        fetchWithTimeout('/api/sources/forex-news', 10000),
       ]);
 
       const rawArticles = rssResult.status === 'fulfilled' ? rssResult.value : [];
       const xArticles = xResult.status === 'fulfilled' ? xResult.value : [];
-      const forexArticles = forexResult.status === 'fulfilled' ? forexResult.value : [];
 
-      const combined = [...rawArticles, ...xArticles, ...forexArticles];
+      const combined = [...rawArticles, ...xArticles];
 
       const existingIds = new Set(articles.map(a => a.id));
       
