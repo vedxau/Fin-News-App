@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import PriorityColumn from './components/PriorityColumn';
 import ForexCalendar from './components/ForexCalendar';
 import WorldMap from './components/WorldMap';
 import { useNews } from './hooks/useNews';
-import { signInAnonymously } from 'firebase/auth';
-import { auth } from './lib/firebase';
+
 import {
   LayoutGrid, BarChart3, Database, Shield,
   Terminal, Rss, Twitter, TrendingUp, TrendingDown,
@@ -34,10 +33,6 @@ const GlassCard = ({ children, className = '' }: { children: React.ReactNode; cl
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  useEffect(() => {
-    signInAnonymously(auth).catch(console.error);
-  }, []);
 
   const { articles, loading, ingesting, triggerIngestion } = useNews();
 
