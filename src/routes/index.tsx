@@ -11,22 +11,39 @@ export function Dashboard() {
   const context = useOutletContext<{ articles: Article[], onFetch: () => void }>();
   const articles = context?.articles || [];
   const onFetch = context?.onFetch || (() => {});
+  const [error, setError] = React.useState<string | null>(null);
 
-  // Map real articles to the expected UI format
-  const mappedArticles: NewsItem[] = articles.map(a => {
-    return {
-      id: a.id,
-      title: a.title,
-      source: a.source,
-      category: a.categories?.[0] || "General",
-      priority: (a.priority?.toLowerCase() || "low") as "high" | "medium" | "low",
-      sentiment: a.sentiment,
-      impactScore: Math.round((a.impact_score || 0) * 100),
-      time: "recent", // We can improve relative time logic
-      summary: a.body?.substring(0, 150) + "...",
-      tickers: a.entities?.slice(0, 3) || []
-    };
-  });
+  React.useEffect(() => {
+    const handleErr = (e: ErrorEvent) => setError(e.message);
+    window.addEventListener('error', handleErr);
+    return () => window.removeEventListener('error', handleErr);
+  }, []);
+
+  if (error) {
+    return <div className="p-8 text-white">Dashboard Error: {error}</div>;
+  }
+
+  let mappedArticles: NewsItem[] = [];
+  try {
+    mappedArticles = articles.map(a => {
+      if (!a) return null;
+      return {
+        id: a.id || Math.random().toString(),
+        title: a.title || "Unknown",
+        source: a.source || "Unknown",
+        category: Array.isArray(a.categories) ? (a.categories[0] || "General") : "General",
+        priority: (typeof a.priority === 'string' ? a.priority.toLowerCase() : "low") as "high" | "medium" | "low",
+        sentiment: typeof a.sentiment === 'string' ? a.sentiment : "neutral",
+        impactScore: Math.round((typeof a.impact_score === 'number' ? a.impact_score : 0) * 100),
+        time: "recent",
+        summary: typeof a.body === "string" ? a.body.substring(0, 150) + "..." : "No summary",
+        tickers: Array.isArray(a.entities) ? a.entities.slice(0, 3) : []
+      };
+    }).filter(Boolean) as NewsItem[];
+  } catch (err: any) {
+    console.error("Mapping error:", err);
+    if (!error) setError(err.message || "Unknown mapping error");
+  }
 
   const highPriority = mappedArticles.filter(a => a.priority === "high");
   const mediumPriority = mappedArticles.filter(a => a.priority === "medium");
