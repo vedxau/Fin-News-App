@@ -84,7 +84,7 @@ export default function ForexCalendar() {
   const fetchCalendar = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/sources/forex-calendar');
+      const res = await fetch(`/api/sources/forex-calendar?t=${Date.now()}`);
       const data = await res.json();
       setEvents(data);
       setLastFetched(new Date());

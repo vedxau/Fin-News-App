@@ -14,6 +14,14 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Prevent caching for all API routes
+  app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
   // API Route to fetch news from RSS sources
   app.get("/api/sources/rss", async (req, res) => {
     try {

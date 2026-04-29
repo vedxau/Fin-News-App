@@ -46,8 +46,8 @@ export function useNews() {
 
       // Fetch RSS and X concurrently — ForexFactory calendar is ONLY for the Calendar tab
       const [rssResult, xResult] = await Promise.allSettled([
-        fetchWithTimeout('/api/sources/rss', 6000),
-        fetchWithTimeout('/api/sources/x', 18000),
+        fetchWithTimeout(`/api/sources/rss?t=${Date.now()}`, 6000),
+        fetchWithTimeout(`/api/sources/x?t=${Date.now()}`, 18000),
       ]);
 
       const rawArticles = rssResult.status === 'fulfilled' ? rssResult.value : [];
