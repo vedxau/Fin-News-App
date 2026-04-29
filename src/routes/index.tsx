@@ -6,6 +6,7 @@ import type { Article } from "../types";
 import type { NewsItem } from "../lib/finpulse-data";
 import { StatusPill } from "../components/finpulse/StatusPill";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "../lib/utils";
 
 export function Dashboard() {
   const context = useOutletContext<{ articles: Article[], onFetch: () => void }>();
