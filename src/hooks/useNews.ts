@@ -12,7 +12,12 @@ export function useNews() {
     const stored = localStorage.getItem('finpulse_articles_v2');
     if (stored) {
       try {
-        setArticles(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setArticles(parsed);
+        } else {
+          setArticles([]);
+        }
       } catch (e) {
         console.error("Failed to parse stored articles");
       }

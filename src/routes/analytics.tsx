@@ -6,7 +6,8 @@ import type { Article } from "../types";
 import { cn } from "../lib/utils";
 
 export function Analytics() {
-  const { articles } = useOutletContext<{ articles: Article[] }>();
+  const context = useOutletContext<{ articles: Article[] }>();
+  const articles = context?.articles || [];
 
   const total = articles.length || 1; // prevent div by zero
   const bullishCount = articles.filter(a => ["bullish", "positive"].includes(a.sentiment)).length;

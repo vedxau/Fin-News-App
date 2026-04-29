@@ -7,7 +7,8 @@ import { cn } from "../lib/utils";
 import { MapPin } from "lucide-react";
 
 export function Map() {
-  const { articles } = useOutletContext<{ articles: Article[] }>();
+  const context = useOutletContext<{ articles: Article[] }>();
+  const articles = context?.articles || [];
   const [activeItem, setActiveItem] = useState<Article | null>(null);
 
   // Use the live articles but assign fake coordinates to ones without them,

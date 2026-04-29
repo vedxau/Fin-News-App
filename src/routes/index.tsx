@@ -8,7 +8,9 @@ import { StatusPill } from "../components/finpulse/StatusPill";
 import { useOutletContext } from "react-router-dom";
 
 export function Dashboard() {
-  const { articles, onFetch } = useOutletContext<{ articles: Article[], onFetch: () => void }>();
+  const context = useOutletContext<{ articles: Article[], onFetch: () => void }>();
+  const articles = context?.articles || [];
+  const onFetch = context?.onFetch || (() => {});
 
   // Map real articles to the expected UI format
   const mappedArticles: NewsItem[] = articles.map(a => {
