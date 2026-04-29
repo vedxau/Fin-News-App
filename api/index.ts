@@ -18,9 +18,9 @@ app.use((req, res, next) => {
 app.get("/api/sources/rss", async (req, res) => {
   try {
     const sources = [
-      { name: "BBC Business", url: "http://feeds.bbci.co.uk/news/business/rss.xml" },
-      { name: "CNN Business", url: "http://rss.cnn.com/rss/money_latest.rss" },
-      { name: "Al Jazeera Business", url: "https://www.aljazeera.com/xml/rss/all.xml" }
+      { name: "CoinTelegraph", url: "https://cointelegraph.com/rss" },
+      { name: "TechCrunch", url: "https://techcrunch.com/feed/" },
+      { name: "NYT Business", url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" }
     ];
 
     const allItems = [];
@@ -57,11 +57,21 @@ app.get("/api/sources/x", async (req, res) => {
     
     console.warn("Generating dynamic live stream emulation for X sources...");
     
+    const mockBodies = [
+      "JUST IN: Key market movement observed. Volume increasing for top altcoins as institutional buying pressure steps up. Stay tuned for further analysis. #Crypto #Markets",
+      "BREAKING: Major tech firm announces unexpected earnings beat. Shares up 5% in after-hours trading. A big win for the sector! 🚀 #TechStocks",
+      "ALERT: Central bank signals possible rate cuts sooner than expected. Markets reacting positively across the board. #Economy",
+      "NEW: Regulatory approval granted for the first spot ETF in this sector. This could open the floodgates for institutional capital. 📈",
+      "DEVELOPING: Merger talks between two industry giants have reportedly stalled. Sources cite antitrust concerns. More details to follow.",
+      "LATEST: Supply chain disruptions causing temporary price spikes in raw materials. Analysts predict normalization by Q3. ⚠️"
+    ];
+    
     accounts.forEach((account) => {
+      const randomBody = mockBodies[Math.floor(Math.random() * mockBodies.length)];
       allTweets.push({
-        id: `mock-${account}-${Date.now()}`,
+        id: `mock-${account}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         title: `Update from @${account}`,
-        body: `JUST IN: Key market movement observed. Volume increasing for top altcoins as institutional buying pressure steps up. Stay tuned for further analysis. #Crypto #Markets`,
+        body: randomBody,
         url: `https://x.com/${account}`,
         published_at: new Date().toISOString(),
         source: `x.com (@${account})`,
